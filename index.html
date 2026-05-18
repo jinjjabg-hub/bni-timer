@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<!-- saved from url=(0068)file:///C:/Users/user/Downloads/BNI_%ED%83%80%EC%9D%B4%EB%A8%B8.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BNI 타이머">
+<title>BNI 타이머</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1c2333;
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --text: #f0f4ff;
+    --text2: #8b95b0;
+    --text3: #4a5270;
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.15);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.18);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.18);
+    --green: #10b981;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px);
+    overflow-x: hidden;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 420px;
+    padding: 16px 0 20px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--blue);
+    box-shadow: 0 0 12px var(--blue);
+  }
+  .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo-sub { font-size: 12px; color: var(--text2); }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 12px;
+  }
+  .mbtn {
+    padding: 12px 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    -webkit-user-select: none;
+  }
+  .mbtn .mn { font-size: 13px; font-weight: 600; display: block; color: var(--text2); }
+  .mbtn .mt { font-size: 11px; display: block; margin-top: 3px; color: var(--text3); }
+  .mbtn.active {
+    border-color: var(--blue);
+    background: var(--blue-bg);
+  }
+  .mbtn.active .mn { color: var(--blue); }
+  .mbtn.active .mt { color: rgba(59,130,246,0.7); }
+
+  .preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 44px;
+    width: 100%;
+    max-width: 420px;
+    transition: opacity 0.2s;
+  }
+  .preset-row.hidden { opacity: 0; pointer-events: none; }
+  .plbl { font-size: 12px; color: var(--text3); }
+  .pbtn {
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+    -webkit-user-select: none;
+  }
+  .pbtn.sel {
+    background: var(--amber-bg);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  /* Ring Area */
+  .ring-outer {
+    position: relative;
+    width: 260px; height: 260px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 16px 0;
+  }
+  .ripple {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 3px solid rgba(245,158,11,0.8);
+    opacity: 0; display: none; pointer-events: none;
+  }
+  .ripple2 {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 3px solid rgba(245,158,11,0.5);
+    opacity: 0; display: none; pointer-events: none;
+  }
+  .ring-wrap {
+    position: relative;
+    width: 240px; height: 240px;
+  }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 50%;
+    transition: background 0.3s;
+  }
+  .alert-icon { display: none; line-height: 1; margin-bottom: 4px; }
+  .alert-icon svg { width: 56px; height: 56px; }
+  .tnum {
+    font-size: 72px; font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -4px; line-height: 1;
+    transition: font-size 0.3s;
+  }
+  .tnum.shrink { font-size: 48px; }
+  .tlbl {
+    font-size: 13px; color: var(--text3);
+    margin-top: 8px; letter-spacing: 1px;
+    text-transform: uppercase; font-weight: 500;
+  }
+  .tlbl.amber { color: var(--amber); font-size: 16px; font-weight: 700; }
+  .tlbl.red { color: var(--red); font-size: 16px; font-weight: 700; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  .btn {
+    padding: 16px 36px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    font-size: 16px; font-weight: 600;
+    cursor: pointer; color: var(--text2);
+    transition: all 0.15s;
+    -webkit-user-select: none;
+    min-width: 120px;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn.go {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+  }
+  .btn.go.running {
+    background: var(--bg2);
+    border-color: var(--border);
+    color: var(--text2);
+    box-shadow: none;
+  }
+
+  /* Settings */
+  .tog {
+    background: none; border: none; color: var(--text3);
+    font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 16px; border-radius: 10px;
+    font-family: inherit;
+  }
+  .tog:active { background: var(--bg2); }
+  .tog svg { width: 16px; height: 16px; }
+
+  .sbox {
+    width: 100%; max-width: 420px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg2);
+    display: none; overflow: hidden;
+    margin-top: 4px;
+  }
+  .sbox.open { display: block; }
+  .sinner { padding: 20px; }
+  .smode {
+    margin-bottom: 20px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .smode:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .smtitle {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .smtitle::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue); flex-shrink: 0;
+  }
+  .srow {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+  .slbl { font-size: 13px; color: var(--text2); }
+  .sinps { display: flex; align-items: center; gap: 6px; }
+  .sinp {
+    width: 58px; padding: 8px 10px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text);
+    font-size: 14px; text-align: right;
+    font-family: inherit; font-weight: 500;
+  }
+  .sinp:focus { outline: none; border-color: var(--blue); }
+  .su { font-size: 12px; color: var(--text3); }
+  .name-inp {
+    font-size: 14px; font-weight: 600;
+    border: none; background: transparent;
+    color: var(--text); font-family: inherit;
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 2px; width: 100px;
+  }
+  .name-inp:focus { outline: none; border-color: var(--blue); }
+
+  /* Animations */
+  @keyframes crazyShake {
+    0%,100%{transform:translate(0,0) rotate(0);}
+    8%{transform:translate(-10px,-3px) rotate(-2deg);}
+    16%{transform:translate(10px,3px) rotate(2deg);}
+    24%{transform:translate(-10px,2px) rotate(-1.5deg);}
+    32%{transform:translate(10px,-3px) rotate(1.5deg);}
+    40%{transform:translate(-7px,3px) rotate(-1deg);}
+    48%{transform:translate(7px,-2px) rotate(1deg);}
+    56%{transform:translate(-7px,-3px) rotate(-1.5deg);}
+    64%{transform:translate(7px,3px) rotate(1.5deg);}
+    72%{transform:translate(-4px,-1px);}
+    80%{transform:translate(4px,1px);}
+    90%{transform:translate(-2px,0);}
+  }
+  @keyframes rippleOut { 0%{transform:scale(1);opacity:0.9;} 100%{transform:scale(1.6);opacity:0;} }
+  @keyframes rippleOut2 { 0%{transform:scale(1);opacity:0.7;} 100%{transform:scale(1.7);opacity:0;} }
+  @keyframes flashAmber { 0%,100%{background:rgba(245,158,11,0.12);} 50%{background:rgba(245,158,11,0.5);} }
+  @keyframes flashRed { 0%,100%{background:rgba(239,68,68,0.12);} 50%{background:rgba(239,68,68,0.5);} }
+  @keyframes wildFlag {
+    0%{transform:rotate(-45deg) scale(1.5);}
+    20%{transform:rotate(45deg) scale(1.8);}
+    40%{transform:rotate(-38deg) scale(1.4);}
+    60%{transform:rotate(42deg) scale(1.7);}
+    80%{transform:rotate(-45deg) scale(1.5);}
+    100%{transform:rotate(45deg) scale(1.8);}
+  }
+  @keyframes strokeFlash { 0%,100%{opacity:1;} 45%,55%{opacity:0.05;} }
+  @keyframes labelFlash { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  .ring-outer.shaking .ring-wrap { animation: crazyShake 0.32s ease-in-out infinite; }
+  .ripple.go { display:block; animation: rippleOut 0.75s ease-out infinite; }
+  .ripple2.go { display:block; animation: rippleOut2 0.75s ease-out infinite; animation-delay: 0.37s; }
+  .center.flag-bg { animation: flashAmber 0.32s ease-in-out infinite; }
+  .center.bell-bg { animation: flashRed 0.28s ease-in-out infinite; }
+  .alert-icon.show { display:block; animation: wildFlag 0.28s ease-in-out infinite; transform-origin: center bottom; }
+  .alert-icon.bell-show { display:block; animation: wildFlag 0.45s ease-in-out infinite; transform-origin: center; }
+  #rp.flash-amber { animation: strokeFlash 0.32s ease-in-out infinite; }
+  #rp.flash-red { animation: strokeFlash 0.28s ease-in-out infinite; }
+  .tlbl.amber { animation: labelFlash 0.32s ease-in-out infinite; }
+  .tlbl.red { animation: labelFlash 0.28s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <div class="logo-text">BNI 타이머</div>
+      <div class="logo-sub">Pioneer Chapter</div>
+    </div>
+  </div>
+</div>
+
+<div class="mode-grid" id="modeGrid">
+  <button class="mbtn active" onclick="selectMode(0)">
+    <span class="mn">위클리</span><span class="mt" id="mt0">40초</span>
+  </button>
+  <button class="mbtn" onclick="selectMode(1)">
+    <span class="mn">피쳐</span><span class="mt" id="mt1">8분</span>
+  </button>
+  <button class="mbtn" onclick="selectMode(2)">
+    <span class="mn">교육</span><span class="mt" id="mt2">10분</span>
+  </button>
+  <button class="mbtn" onclick="selectMode(3)">
+    <span class="mn" id="mn3">인포머셜</span><span class="mt" id="mt3">30초</span>
+  </button>
+</div>
+
+<div class="preset-row" id="presetRow">
+  <span class="plbl">빠른 설정</span>
+  <button class="pbtn" id="p30" onclick="applyPreset(30)">30초</button>
+  <button class="pbtn sel" id="p40" onclick="applyPreset(40)">40초</button>
+  <button class="pbtn" id="p50" onclick="applyPreset(50)">50초</button>
+</div>
+
+<div class="ring-outer" id="ringOuter">
+  <div class="ripple" id="ripple1"></div>
+  <div class="ripple2" id="ripple2"></div>
+  <div class="ring-wrap">
+    <svg width="240" height="240" viewBox="0 0 240 240">
+      <circle cx="120" cy="120" r="105" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="12"></circle>
+      <circle id="rp" cx="120" cy="120" r="105" fill="none" stroke="#3b82f6" stroke-width="12" stroke-linecap="round" stroke-dasharray="659.73" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.95s linear, stroke 0.4s; stroke-dashoffset: 0; stroke: rgb(59, 130, 246);"></circle>
+    </svg>
+    <div class="center" id="centerArea">
+      <div class="alert-icon" id="alertIcon">
+        <!-- flag icon -->
+        <svg id="alertSvg" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+          <line x1="4" y1="22" x2="4" y2="15"></line>
+        </svg>
+      </div>
+      <div class="tnum" id="tnum">40</div>
+      <div class="tlbl" id="tlbl">시작 전</div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-row">
+  <button class="btn go" id="startBtn" onclick="toggleTimer()">시작</button>
+  <button class="btn" onclick="resetTimer()">리셋</button>
+</div>
+
+<button class="tog" onclick="toggleSettings()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path></svg>
+  <span id="togLabel">세부 시간 설정</span>
+</button>
+
+<div class="sbox" id="sbox">
+  <div class="sinner" id="sinner"></div>
+</div>
+
+<script>
+const CIRC = 2 * Math.PI * 105;
+
+const modes = [
+  { name:'위클리',   totalSec:40,  flagBeforeSec:10  },
+  { name:'피쳐',     totalSec:480, flagBeforeSec:120 },
+  { name:'교육',     totalSec:600, flagBeforeSec:60  },
+  { name:'인포머셜', totalSec:30,  flagBeforeSec:10  },
+];
+
+let cur=0, rem=40, running=false, iv=null;
+let flagFired=false, bellFired=false, weeklyPreset=40;
+
+function fmtTime(s){
+  if(s<60) return s+'초';
+  const m=Math.floor(s/60),sc=s%60;
+  return sc===0 ? m+'분' : m+'분 '+sc+'초';
+}
+function fmtDisp(s){
+  s=Math.max(0,s);
+  const m=Math.floor(s/60),sc=s%60;
+  return m===0 ? String(sc) : m+':'+String(sc).padStart(2,'0');
+}
+function updateLabels(){
+  modes.forEach((m,i)=>{
+    const el=document.getElementById('mt'+i);
+    if(el) el.textContent=fmtTime(m.totalSec);
+  });
+  document.getElementById('mn3').textContent=modes[3].name;
+}
+function updatePresetBtns(){
+  [30,40,50].forEach(v=>{
+    const b=document.getElementById('p'+v);
+    if(b) b.classList.toggle('sel', weeklyPreset===v);
+  });
+}
+function applyPreset(sec){
+  if(running) return;
+  weeklyPreset=sec; modes[0].totalSec=sec;
+  updateLabels(); updatePresetBtns(); resetTimer();
+}
+function selectMode(i){
+  if(running) return;
+  cur=i;
+  document.querySelectorAll('.mbtn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.getElementById('presetRow').classList.toggle('hidden', i!==0);
+  resetTimer();
+  if(document.getElementById('sbox').classList.contains('open')) renderSettings();
+}
+function updateDisp(r){
+  document.getElementById('tnum').textContent=fmtDisp(r);
+  const fa=modes[cur].flagBeforeSec, lbl=document.getElementById('tlbl');
+  if(!running && r===modes[cur].totalSec){ lbl.textContent='시작 전'; lbl.className='tlbl'; }
+  else if(r<=0){ lbl.textContent='종  료'; lbl.className='tlbl red'; }
+  else if(r<=fa){ lbl.textContent='깃발!!!'; lbl.className='tlbl amber'; }
+  else{ lbl.textContent='진행 중'; lbl.className='tlbl'; }
+}
+function updateRing(r){
+  const total=modes[cur].totalSec, rp=document.getElementById('rp');
+  rp.style.strokeDashoffset = CIRC*(1-(Math.max(0,r)/total));
+  const fa=modes[cur].flagBeforeSec;
+  if(r<=0) rp.style.stroke='#ef4444';
+  else if(r<=fa) rp.style.stroke='#f59e0b';
+  else rp.style.stroke='#3b82f6';
+}
+function setFlagVisual(on){
+  const c=document.getElementById('centerArea');
+  const ai=document.getElementById('alertIcon');
+  const ro=document.getElementById('ringOuter'), rp=document.getElementById('rp');
+  const r1=document.getElementById('ripple1'), r2=document.getElementById('ripple2');
+  const svg=document.getElementById('alertSvg');
+  if(on){
+    c.classList.add('flag-bg');
+    ai.className='alert-icon show';
+    svg.setAttribute('stroke','#f59e0b');
+    svg.innerHTML='<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>';
+    ro.classList.add('shaking');
+    rp.classList.add('flash-amber');
+    r1.style.borderColor='rgba(245,158,11,0.8)'; r2.style.borderColor='rgba(245,158,11,0.5)';
+    r1.classList.add('go'); r2.classList.add('go');
+    document.getElementById('tnum').classList.add('shrink');
+    // vibrate if supported
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+  } else {
+    c.classList.remove('flag-bg'); ai.className='alert-icon';
+    ro.classList.remove('shaking'); rp.classList.remove('flash-amber');
+    r1.classList.remove('go'); r2.classList.remove('go');
+    document.getElementById('tnum').classList.remove('shrink');
+  }
+}
+function setBellVisual(on){
+  const c=document.getElementById('centerArea');
+  const ai=document.getElementById('alertIcon');
+  const ro=document.getElementById('ringOuter'), rp=document.getElementById('rp');
+  const r1=document.getElementById('ripple1'), r2=document.getElementById('ripple2');
+  const svg=document.getElementById('alertSvg');
+  if(on){
+    setFlagVisual(false);
+    c.classList.add('bell-bg');
+    ai.className='alert-icon bell-show';
+    svg.setAttribute('stroke','#ef4444');
+    svg.innerHTML='<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>';
+    ro.classList.add('shaking');
+    rp.classList.add('flash-red');
+    r1.style.borderColor='rgba(239,68,68,0.8)'; r2.style.borderColor='rgba(239,68,68,0.5)';
+    r1.classList.add('go'); r2.classList.add('go');
+    document.getElementById('tnum').classList.add('shrink');
+    if(navigator.vibrate) navigator.vibrate([500,100,500,100,500,100,500]);
+  } else {
+    c.classList.remove('bell-bg'); ai.className='alert-icon';
+    ro.classList.remove('shaking'); rp.classList.remove('flash-red');
+    r1.classList.remove('go'); r2.classList.remove('go');
+    document.getElementById('tnum').classList.remove('shrink');
+  }
+}
+function playBell(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [[880,0],[1320,0.1],[660,0.22],[880,0.5],[1100,0.62]].forEach(([f,d])=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sine'; o.frequency.setValueAtTime(f, ctx.currentTime+d);
+      g.gain.setValueAtTime(0, ctx.currentTime+d);
+      g.gain.linearRampToValueAtTime(0.5, ctx.currentTime+d+0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+d+2);
+      o.start(ctx.currentTime+d); o.stop(ctx.currentTime+d+2);
+    });
+  }catch(e){}
+}
+function toggleTimer(){
+  if(running){
+    running=false; clearInterval(iv);
+    document.getElementById('startBtn').textContent='재개';
+    document.getElementById('startBtn').classList.remove('running');
+  } else {
+    running=true;
+    document.getElementById('startBtn').textContent='일시정지';
+    document.getElementById('startBtn').classList.add('running');
+    document.querySelectorAll('.mbtn').forEach(b=>b.style.pointerEvents='none');
+    document.getElementById('presetRow').style.pointerEvents='none';
+    iv=setInterval(tick,1000);
+  }
+}
+function tick(){
+  rem--;
+  const fa=modes[cur].flagBeforeSec;
+  if(rem<=fa && !flagFired){ flagFired=true; setFlagVisual(true); }
+  if(rem<=0 && !bellFired){
+    bellFired=true; rem=0;
+    setBellVisual(true); playBell();
+    clearInterval(iv); running=false;
+    document.getElementById('startBtn').textContent='시작';
+    document.getElementById('startBtn').classList.remove('running');
+    document.querySelectorAll('.mbtn').forEach(b=>b.style.pointerEvents='');
+    document.getElementById('presetRow').style.pointerEvents='';
+  }
+  updateDisp(rem); updateRing(rem);
+}
+function resetTimer(){
+  clearInterval(iv); running=false; flagFired=false; bellFired=false;
+  rem=modes[cur].totalSec;
+  document.getElementById('startBtn').textContent='시작';
+  document.getElementById('startBtn').classList.remove('running');
+  setFlagVisual(false); setBellVisual(false);
+  document.getElementById('alertSvg').setAttribute('stroke','#f59e0b');
+  document.getElementById('alertSvg').innerHTML='<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>';
+  document.getElementById('ripple1').style.borderColor='';
+  document.getElementById('ripple2').style.borderColor='';
+  document.querySelectorAll('.mbtn').forEach(b=>b.style.pointerEvents='');
+  document.getElementById('presetRow').style.pointerEvents='';
+  const rp=document.getElementById('rp');
+  rp.style.transition='none'; rp.style.strokeDashoffset='0'; rp.style.stroke='#3b82f6';
+  rp.getBoundingClientRect();
+  rp.style.transition='stroke-dashoffset 0.95s linear,stroke 0.4s';
+  updateDisp(rem); updateRing(rem);
+}
+function toggleSettings(){
+  const box=document.getElementById('sbox'), open=box.classList.toggle('open');
+  document.getElementById('togLabel').textContent=open?'설정 닫기':'세부 시간 설정';
+  if(open) renderSettings();
+}
+function renderSettings(){
+  let html='';
+  modes.forEach((m,i)=>{
+    const tm=Math.floor(m.totalSec/60), ts=m.totalSec%60;
+    const fm=Math.floor(m.flagBeforeSec/60), fs=m.flagBeforeSec%60;
+    const nameEl=i===3
+      ?`<input class="name-inp" value="${m.name}" onchange="modes[3].name=this.value;document.getElementById('mn3').textContent=this.value;">`
+      :`<span>${m.name}</span>`;
+    html+=`<div class="smode">
+      <div class="smtitle">${nameEl}</div>
+      <div class="srow">
+        <span class="slbl">총 시간</span>
+        <div class="sinps">
+          <input type="number" class="sinp" min="0" max="99" value="${tm}" onchange="setTotal(${i},this.value,null)">
+          <span class="su">분</span>
+          <input type="number" class="sinp" min="0" max="59" value="${ts}" onchange="setTotal(${i},null,this.value)">
+          <span class="su">초</span>
+        </div>
+      </div>
+      <div class="srow">
+        <span class="slbl">깃발 (종료 전)</span>
+        <div class="sinps">
+          <input type="number" class="sinp" min="0" max="99" value="${fm}" onchange="setFlag(${i},this.value,null)">
+          <span class="su">분</span>
+          <input type="number" class="sinp" min="0" max="59" value="${fs}" onchange="setFlag(${i},null,this.value)">
+          <span class="su">초</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('sinner').innerHTML=html;
+}
+function setTotal(i,mv,sv){
+  const m=modes[i];
+  const cm=Math.floor(m.totalSec/60), cs=m.totalSec%60;
+  modes[i].totalSec=(mv!==null?(parseInt(mv)||0):cm)*60+(sv!==null?(parseInt(sv)||0):cs);
+  if(i===0) weeklyPreset=modes[0].totalSec;
+  updateLabels();
+  if(i===cur && !running) resetTimer();
+}
+function setFlag(i,mv,sv){
+  const m=modes[i];
+  const cm=Math.floor(m.flagBeforeSec/60), cs=m.flagBeforeSec%60;
+  modes[i].flagBeforeSec=(mv!==null?(parseInt(mv)||0):cm)*60+(sv!==null?(parseInt(sv)||0):cs);
+}
+
+// init
+updateLabels(); updateDisp(rem); updateRing(rem); updatePresetBtns();
+
+// 화면 꺼짐 방지 (지원 브라우저에서)
+let wakeLock=null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      wakeLock=await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+document.getElementById('startBtn').addEventListener('click',requestWakeLock);
+</script>
+
+
+</body></html>
